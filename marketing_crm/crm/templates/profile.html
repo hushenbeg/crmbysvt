@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>User Profile</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>First Name</label>
+            {{ form.first_name }}
+        </div>
+        <div class="mb-3">
+            <label>Last Name</label>
+            {{ form.last_name }}
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            {{ form.email }}
+        </div>
+        <div class="mb-3">
+            <label>Profile Picture</label>
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" width="100" class="mb-2">
+            {% endif %}
+            {{ form.profile_picture }}
+        </div>
+        <button type="submit" class="btn btn-primary">Update Profile</button>
+    </form>
+</div>
+{% endblock %}

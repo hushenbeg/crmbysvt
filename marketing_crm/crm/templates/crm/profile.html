@@ -1,0 +1,585 @@
+{% extends "crm/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<!-- Bootstrap Toast-like Alerts -->
+{% comment %} {% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %} {% endcomment %}
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {% if message.tags == "success" %}
+        <i class="fa fa-check-circle me-2"></i>
+      {% elif message.tags == "error" %}
+        <i class="fa fa-exclamation-circle me-2"></i>
+      {% endif %}
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="profile-card text-center text-white">
+
+        <!-- View Mode -->
+        <div id="profile-view">
+          <div class="profile-picture-container mb-3">
+            {% if profile_form.instance.image %}
+              <img src="{{ profile_form.instance.image.url }}" class="profile-picture img-thumbnail">
+            {% else %}
+              <div class="default-profile-picture">
+                <i class="fas fa-user-circle"></i>
+              </div>
+            {% endif %}
+          </div>
+          <center>
+          <table style="background-color: #2c3e50; color: white; width: auto; margin: 0; border-color: #34495e;">
+            <tbody>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>First Name:</strong></td>
+                <td style="padding: 8px 12px;">{{ user_form.instance.first_name }}</td>
+                </tr>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>Last Name:</strong></td>
+                <td style="padding: 8px 12px;">{{ user_form.instance.last_name }}</td>
+                </tr>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>Email:</strong></td>
+                <td style="padding: 8px 12px;">{{ user_form.instance.email }}</td>
+                </tr>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>Mobile:</strong></td>
+                <td style="padding: 8px 12px;">{{ profile_form.instance.phone }}</td>
+                </tr>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>Gender:</strong></td>
+                <td style="padding: 8px 12px;">{{ profile_form.instance.gender }}</td>
+                </tr>
+                <tr>
+                <td style="padding: 8px 12px;"><strong>Bio:</strong></td>
+                <td style="padding: 8px 12px;">{{ profile_form.instance.bio }}</td>
+                </tr>
+            </tbody>
+            </table>
+            </center>
+            <br>
+          <button class="btn btn-glow px-4" onclick="toggleEdit(true)">Edit</button>
+        </div>
+
+        <!-- Edit Mode -->
+        <div id="profile-edit" style="display: none;">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <table style="background-color: #2c3e50; color: white; width: 100%; border-color: #34495e; margin-bottom: 20px;">
+                <tbody>
+                    <!-- First Name -->
+                    <tr>
+                    <td style="padding: 12px; width: 30%;">
+                        <label for="{{ user_form.first_name.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ user_form.first_name.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;">
+                        {{ user_form.first_name }}
+                    </td>
+                    </tr>
+                    
+                    <!-- Last Name -->
+                    <tr>
+                    <td style="padding: 12px;">
+                        <label for="{{ user_form.last_name.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ user_form.last_name.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;">
+                        {{ user_form.last_name }}
+                    </td>
+                    </tr>
+                    
+                    <!-- Email -->
+                    <tr>
+                    <td style="padding: 12px;">
+                        <label for="{{ user_form.email.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ user_form.email.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;">
+                        {{ user_form.email }}
+                    </td>
+                    </tr>
+                    
+                    <!-- Profile Image -->
+                    <div class="text-center position-relative d-inline-block mb-4">
+                        <!-- Profile image -->
+                        <img src="{{ user.profile.image.url }}" alt="Profile Picture"
+                            class="rounded-circle border border-light shadow"
+                            style="width: 150px; height: 150px; object-fit: cover;">
+
+                        <!-- Edit icon overlaid on image -->
+                        <label for="id_image" class="position-absolute"
+                                style="bottom: 0; right: 0; background: #fff; border-radius: 50%; padding: 8px; cursor: pointer;">
+                            <i class="fa fa-edit text-primary"></i>
+                        </label>
+
+                        <!-- Hidden file input -->
+                        <input type="file" name="image" id="id_image" style="display: none;">
+                    </div>
+                    <tr>
+                    <td style="padding: 12px;">
+                        <label for="{{ profile_form.phone.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ profile_form.phone.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;">
+                        {{ profile_form.phone }}
+                    </td>
+                    </tr>
+
+                    <!-- Gender -->
+                    <tr>
+                    <td style="padding: 12px;">
+                        <label for="{{ profile_form.gender.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ profile_form.gender.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;">
+                        {{ profile_form.gender }}
+                    </td>
+                    </tr>
+
+                    <!-- Bio -->
+                    <tr>
+                    <td style="padding: 12px;">
+                        <label for="{{ profile_form.bio.id_for_label }}" style="margin-bottom: 0; font-weight: bold;">
+                        {{ profile_form.bio.label }}
+                        </label>
+                    </td>
+                    <td style="padding: 12px;" class="form-control">
+                        {{ profile_form.bio }}
+                    </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-center gap-3 mt-4">
+              <button type="submit" class="btn btn-glow px-4">Update</button>
+              <button type="button" class="btn btn-secondary px-4" onclick="toggleEdit(false)">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Styles -->
+<style>
+  body {
+    background: #1e1e2f;
+    color: #fff;
+  }
+
+  .profile-card {
+    background: linear-gradient(145deg, #2c2f4a, #1e1e2f);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: 0.3s ease;
+  }
+
+  .profile-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .profile-picture-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: auto;
+    border: 4px solid #6c63ff;
+    box-shadow: 0 0 12px rgba(108, 99, 255, 0.6);
+  }
+
+  .profile-picture {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .default-profile-picture {
+    width: 100%;
+    height: 100%;
+    background-color: #495057;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5rem;
+    color: #adb5bd;
+  }
+
+  .form-control, .form-select {
+    background-color: #343a40;
+    border: 1px solid #6c63ff;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+
+  .form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.5);
+  }
+
+  label {
+    font-weight: 500;
+  }
+
+  .btn-glow {
+    background: #6c63ff;
+    border: none;
+    color: white;
+    box-shadow: 0 0 10px rgba(108, 99, 255, 0.6);
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 20px rgba(108, 99, 255, 0.9);
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    border: none;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+  }
+
+  #profile-edit input,
+  #profile-edit select,
+  #profile-edit textarea {
+    background-color: #34495e;   /* Dark background */
+    color: white;                /* Light text */
+    border: 1px solid #5a5a5a;   /* Optional: subtle border */
+    border-radius: 5px;
+  }
+
+  #profile-edit input:focus,
+  #profile-edit select:focus,
+  #profile-edit textarea:focus {
+    outline: none;
+    border-color: #8e44ad;       /* Highlight color on focus */
+    box-shadow: 0 0 5px #8e44ad;
+  }
+
+  
+   @media (max-width: 576px) {
+    .profile-card {
+      padding: 1rem;
+    }
+
+    th {
+      font-size: 0.9rem;
+    }
+
+    td {
+      font-size: 0.9rem;
+    }
+
+    .btn-glow {
+      width: 100%;
+    }
+  }
+@media (max-width: 576px) {
+    table td, table th {
+      font-size: 0.85rem;
+      padding: 0.4rem !important;
+    }
+
+    .btn-glow, .btn-secondary {
+      width: 100%;
+    }
+
+    .d-flex.gap-3 {
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 991px) {
+  .sidebar {
+    position: absolute;
+    z-index: 1050;
+    width: 250px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    background-color: #1a1a2e;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .content {
+    margin-left: 0 !important;
+  }
+}
+
+</style>
+
+<!-- Bootstrap JS (for alerts) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JS: Toggle Edit/View Mode + Image Preview -->
+<script>
+  function toggleEdit(showEdit) {
+    const viewDiv = document.getElementById('profile-view');
+    const editDiv = document.getElementById('profile-edit');
+    viewDiv.style.display = showEdit ? 'none' : 'block';
+    editDiv.style.display = showEdit ? 'block' : 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            const container = document.querySelector('.profile-picture-container');
+            const currentImg = container.querySelector('img');
+            if (currentImg) {
+              currentImg.src = event.target.result;
+            } else {
+              const defaultIcon = container.querySelector('.default-profile-picture');
+              if (defaultIcon) {
+                defaultIcon.remove();
+                const newImg = document.createElement('img');
+                newImg.src = event.target.result;
+                newImg.className = 'profile-picture img-thumbnail';
+                container.appendChild(newImg);
+              }
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  });
+</script>
+<script>
+  const imageInput = document.getElementById('id_image');
+  const profileImage = document.querySelector('img[alt="Profile Picture"]');
+
+  imageInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        profileImage.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+
+{% endblock %}
+
+
+{% comment %} {% extends "crm/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<!-- Bootstrap Toast-like Alerts -->
+{% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="profile-card text-center text-white">
+        <div class="profile-picture-container mb-3">
+          {% if profile_form.instance.image %}
+            <img src="{{ profile_form.instance.image.url }}" class="profile-picture img-thumbnail">
+          {% else %}
+            <div class="default-profile-picture">
+              <i class="fas fa-user-circle"></i>
+            </div>
+          {% endif %}
+        </div>
+
+        <h3 class="mb-1">{{ user_form.instance.first_name }} {{ user_form.instance.last_name }}</h3>
+        <p class="text-muted mb-4">{{ user_form.instance.email }}</p>
+
+        <!-- Profile Update Form -->
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row text-start">
+            <div class="col-md-6 mb-3">
+              {{ user_form.first_name.label_tag }} {{ user_form.first_name }}
+            </div>
+            <div class="col-md-6 mb-3">
+              {{ user_form.last_name.label_tag }} {{ user_form.last_name }}
+            </div>
+            <div class="col-md-12 mb-3">
+              {{ user_form.email.label_tag }} {{ user_form.email }}
+            </div>
+            <div class="col-md-12 mb-3">
+              {{ profile_form.image.label_tag }} {{ profile_form.image }}
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-center gap-3 mt-4">
+            <button type="submit" class="btn btn-glow px-4">Update</button>
+            <a href="{% url 'profile' %}" class="btn btn-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Styles -->
+<style>
+  body {
+    background: #1e1e2f;
+    color: #fff;
+  }
+
+  .profile-card {
+    background: linear-gradient(145deg, #2c2f4a, #1e1e2f);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: 0.3s ease;
+  }
+
+  .profile-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .profile-picture-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: auto;
+    border: 4px solid #6c63ff;
+    box-shadow: 0 0 12px rgba(108, 99, 255, 0.6);
+  }
+
+  .profile-picture {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .default-profile-picture {
+    width: 100%;
+    height: 100%;
+    background-color: #495057;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5rem;
+    color: #adb5bd;
+  }
+
+  .form-control, .form-select {
+    background-color: #343a40;
+    border: 1px solid #6c63ff;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+
+  .form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.5);
+  }
+
+  label {
+    font-weight: 500;
+  }
+
+  .btn-glow {
+    background: #6c63ff;
+    border: none;
+    color: white;
+    box-shadow: 0 0 10px rgba(108, 99, 255, 0.6);
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 20px rgba(108, 99, 255, 0.9);
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    border: none;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+  }
+</style>
+
+<!-- Bootstrap JS (for alerts) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JS: Image preview -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const profilePicContainer = document.querySelector('.profile-picture-container');
+            if (profilePicContainer.querySelector('img')) {
+              profilePicContainer.querySelector('img').src = event.target.result;
+            } else {
+              const defaultPic = profilePicContainer.querySelector('.default-profile-picture');
+              if (defaultPic) {
+                defaultPic.remove();
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.className = 'profile-picture img-thumbnail';
+                profilePicContainer.appendChild(img);
+              }
+            }
+          }
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  });
+</script>
+
+{% endblock %}  {% endcomment %}
