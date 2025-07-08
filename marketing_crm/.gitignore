@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+**/.venv/
+**/venv/
+
+# Office files
+*.xlsx
+
+# Ignore all .pyc files (extra safe)
+*.pyc
+**.pyc

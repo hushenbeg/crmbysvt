@@ -1,0 +1,163 @@
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #c9d6ff, #e2e2e2);
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+}
+
+.wrapper {
+    display: flex;
+}
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #343a40;
+    color: white;
+    padding-top: 20px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.sidebar ul {
+    padding: 0;
+    list-style: none;
+}
+
+.sidebar ul li {
+    padding: 15px;
+    border-bottom: 1px solid #495057;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar ul li a i {
+    width: 30px;
+    margin-right: 10px;
+}
+
+.sidebar ul li:hover {
+    background: rgb(116, 157, 197);
+    cursor: pointer;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+.navbar {
+    background: #343a40;
+    padding: 10px 20px;
+}
+
+.navbar a, .navbar .btn {
+    color: #f8d210;
+    font-weight: bold;
+}
+
+.footer {
+    text-align: center;
+
+    padding: 15px;
+    background: #343a40;
+    color: white;
+    font-size: 18px;
+}
+
+/* Submenu */
+.submenu {
+    display: none;
+    list-style: none;
+    padding-left: 20px;
+    margin-top: 5px;
+}
+
+.submenu.show-submenu {
+    display: block;
+}
+
+.submenu li {
+    margin-top: 6px;
+    padding: 10px;
+    background: #495057;
+    border-radius: 5px;
+}
+
+.submenu li:hover {
+    background: #6c757d;
+}
+
+.submenu button {
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* Dark Mode */
+.dark-mode {
+    background-color: #343a40;
+    color: white;
+}
+
+.dark-mode .main-content {
+    background: #343a40;
+}
+
+.dark-mode .navbar,
+.dark-mode .sidebar {
+    background: #222;
+}
+
+.dark-mode .navbar a,
+.dark-mode .btn {
+    color: white;
+}
+
+.dark-mode .sidebar ul li {
+    border-bottom: 1px solid #444;
+}
+
+.dark-mode .footer {
+    background: silver;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .sidebar ul li {
+        text-align: center;
+    }
+
+    .navbar .btn {
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+}

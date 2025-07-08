@@ -1,0 +1,79 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    background-color: #343a40;
+    box-shadow: 0 2px 4px rgba(249, 245, 245, 0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #ffc107;
+}
+
+.container {
+    margin-top: 20px;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+    background-color:rgb(16, 15, 15);
+}
+
+#locationChart {
+    max-width: 500px;
+    height: 400px !important;
+}
+
+.fa {
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .fa:hover {
+    opacity: 0.7;
+  }
+
+/* Tablet View (≤768px) */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 20px;
+    }
+
+    .container {
+        margin-top: 15px;
+        padding: 0 15px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+}
+
+/* Mobile View (≤576px) */
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 18px;
+    }
+
+    .container {
+        margin-top: 10px;
+        padding: 0 10px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .btn {
+        font-size: 14px;
+    }
+}
