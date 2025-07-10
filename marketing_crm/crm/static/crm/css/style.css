@@ -138,6 +138,9 @@ body {
     background: silver;
     color: white;
 }
+.fa-spinner {
+    margin-right: 5px;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

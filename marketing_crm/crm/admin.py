@@ -3,7 +3,7 @@ from django.contrib import admin
 # Register your models here.
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, UploadedFile, CustomerData, Task
+from .models import CustomUser, UploadedFile, CustomerData, Task, ImportedFile
 
 # Register CustomUser in Admin
 class CustomUserAdmin(UserAdmin):
@@ -49,3 +49,13 @@ from .models import CustomUser, Profile
 
 # admin.site.register(CustomUser)
 admin.site.register(Profile)
+
+@admin.register(ImportedFile)
+class ImportedFileAdmin(admin.ModelAdmin):
+    list_display = ('file_name', 'user', 'uploaded_at')
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(user=request.user)

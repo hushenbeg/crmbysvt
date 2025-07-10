@@ -31,62 +31,45 @@ from django.utils.dateparse import parse_date
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.contrib.auth import get_user
-
+from django.views import View
+from django.shortcuts import render
+from django.db.models import Count, Sum
+from .models import ImportedFile
 # Create your views here.
-def index(request):
-    user = get_user(request)  # resolves LazyObject issue
-    if not user.is_authenticated:
-        return redirect('/login/')
-    # Track unique visitor count
-    if not request.session.get('has_visited'):
-        counter, created = VisitorCounter.objects.get_or_create(pk=1)
-        counter.count += 1
-        counter.save()
-        request.session['has_visited'] = True
+# def index(request):
 
-    # Get parameters
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    filter_triggered = request.GET.get('filter_triggered')
-
-    # Base queryset
-    # data = CustomerData.objects.all().order_by('-date', '-id')
-    is_admin = getattr(user, 'is_admin', False)
-    # is_admin = getattr(request.user, 'is_admin', False)
-    if is_admin:
-        data = CustomerData.objects.all().order_by('-date', '-id')
-    else:
-        data = CustomerData.objects.filter(user=request.user).order_by('-date', '-id')
-
-    # Filter only if user clicked the Filter button
-    if filter_triggered and start_date and end_date:
-        data = data.filter(date__range=[start_date, end_date])
-    else:
-        # Reset start and end date for clarity in template if not filtered
-        start_date = end_date = None
-
-    # Pagination
-    paginator = Paginator(data, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    # Smart page range for display
-    current_page = page_obj.number
-    total_pages = paginator.num_pages
-    start_page = max(current_page - 2, 1)
-    end_page = min(current_page + 2, total_pages) + 1
-    custom_page_range = range(start_page, end_page)
-
-    # Get visitor count from DB
-    visitor_count = VisitorCounter.objects.first()
-
-    return render(request, 'crm/index.html', {
-        'data': page_obj,
-        'custom_page_range': custom_page_range,
-        'start_date': start_date,
-        'end_date': end_date,
-        'visitor_count': visitor_count.count if visitor_count else 0
-    })
+class ViewImportedFiles(View):
+    def get(self, request):
+        # Get basic file information first
+        files = ImportedFile.objects.all().order_by('-uploaded_at')
+        
+        # Get counts separately in a single query
+        counts = ImportedFile.objects.values('id').annotate(
+            record_count=Count('dynamicdata')
+        ).order_by('-uploaded_at')
+        
+        # Convert counts to a dictionary for easy lookup
+        count_dict = {item['id']: item['record_count'] for item in counts}
+        
+        # Prepare files data with counts
+        files_data = []
+        total_records = 0
+        
+        for file in files:
+            record_count = count_dict.get(file.id, 0)
+            total_records += record_count
+            files_data.append({
+                'id': file.id,
+                'file_name': file.file_name,
+                'uploaded_at': file.uploaded_at,
+                'file_type': file.file_type,
+                'record_count': record_count
+            })
+        
+        return render(request, 'crm/imported_files.html', {
+            'files': files_data,
+            'total_records': total_records
+        })
 
 @login_required(login_url='/login/')
 def upload_file(request):
@@ -342,10 +325,6 @@ def export_pdf(request):
     doc.build(elements)
     return response
 
-# Email Notification
-def send_notification(user, subject, message):
-    send_mail(subject, message, "noreply@crm.com", [user.email])
-
 
 # Login View
 def user_login(request):
@@ -520,3 +499,169 @@ def delete_customer(request, id):
     customer.delete()
     messages.warning(request, 'Customer deleted successfully.')
     return redirect('dashboard')
+
+
+import pandas as pd
+from django.shortcuts import render, redirect
+from django.views import View
+from .forms import ExcelUploadForm
+from .models import ImportedFile, DynamicData
+
+class ExcelUploadView(View):
+    def get(self, request):
+        form = ExcelUploadForm()
+        return render(request, 'crm/upload_excel.html', {'form': form})
+    def post(self, request):
+        form = ExcelUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['file']
+            
+            try:
+                df = pd.read_excel(excel_file)
+                
+                # Convert Timestamps to strings
+                for col in df.select_dtypes(include=['datetime']).columns:
+                    df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Convert other non-JSON-serializable types
+                df = df.applymap(lambda x: str(x) if isinstance(x, (pd.Timestamp, pd.Timedelta)) else x)
+                
+                # Save file metadata with user association
+                imported_file = ImportedFile(
+                    file_name=form.cleaned_data['file_name'],
+                    file_type=form.cleaned_data['file_type'],
+                    notes=form.cleaned_data['notes'],
+                    original_columns=list(df.columns),
+                    user=request.user  # THIS IS WHERE YOU ADD THE USER
+                )
+                imported_file.save()  # Save the instance after setting all fields
+                
+                # Convert each row to a serializable dictionary
+                for _, row in df.iterrows():
+                    row_dict = row.to_dict()
+                    
+                    # Ensure all values are JSON-serializable
+                    for key, value in row_dict.items():
+                        if isinstance(value, (pd.Timestamp, pd.Timedelta)):
+                            row_dict[key] = str(value)
+                        elif pd.isna(value):
+                            row_dict[key] = None
+                    
+                    DynamicData.objects.create(
+                        source_file=imported_file,
+                        row_data=row_dict
+                    )
+                
+                return redirect('view_imported_files')
+                
+            except Exception as e:
+                return render(request, 'crm/upload_excel.html', {
+                    'form': form,
+                    'error': f'Error processing file: {str(e)}'
+                })
+
+        return render(request, 'crm/upload_excel.html', {'form': form})
+
+from django.views import View
+from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
+from .models import ImportedFile
+
+class ViewImportedFiles(LoginRequiredMixin, View):
+    login_url = '/login/'  # Specify your login URL
+
+    def get(self, request):
+        # Get basic file information first
+        if request.user.is_superuser or request.user.is_staff:
+            files = ImportedFile.objects.all().order_by('-uploaded_at')
+            total_records = sum(file.record_count for file in files)
+        else:
+            files = ImportedFile.objects.filter(user=request.user).order_by('-uploaded_at')
+            total_records = sum(file.record_count for file in files)
+
+        # Get counts separately in a single query
+        counts = ImportedFile.objects.values('id').annotate(
+            record_count=Count('dynamicdata')
+        ).order_by('-uploaded_at')
+        
+        # Convert counts to a dictionary for easy lookup
+        count_dict = {item['id']: item['record_count'] for item in counts}
+        
+        # Prepare files data with counts
+        files_data = []
+        total_records = 0
+        
+        for file in files:
+            record_count = count_dict.get(file.id, 0)
+            total_records += record_count
+            files_data.append({
+                'id': file.id,
+                'file_name': file.file_name,
+                'uploaded_at': file.uploaded_at,
+                'file_type': file.file_type,
+                'record_count': record_count
+            })
+        
+        return render(request, 'crm/imported_files.html', {
+            'files': files_data,
+            'total_records': total_records,
+            'is_admin': request.user.is_superuser or request.user.is_staff
+        })
+
+class ViewFileData(View):
+    def get(self, request, file_id):
+        imported_file = ImportedFile.objects.get(id=file_id)
+        data = DynamicData.objects.filter(source_file=imported_file)
+        
+        # Get all unique keys across all rows for table headers
+        all_keys = set()
+        for item in data:
+            all_keys.update(item.row_data.keys())
+        headers = sorted(all_keys)
+        
+        return render(request, 'crm/file_data.html', {
+            'file': imported_file,
+            'data': data,
+            'headers': headers
+        })
+
+from django.views.generic import DeleteView
+from django.urls import reverse_lazy
+from django.contrib import messages
+from .models import ImportedFile
+
+class DeleteUploadedFile(DeleteView):
+    model = ImportedFile
+    success_url = reverse_lazy('view_imported_files')  # Redirect to files list after deletion
+    template_name = 'crm/confirm_delete.html'  # Optional confirmation template
+
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        messages.success(request, 'File and its data deleted successfully')
+        return response
+    
+
+from django.views import View
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import DynamicData
+
+class DeleteDataRowView(View):
+    def post(self, request, row_id):
+        try:
+            row = get_object_or_404(DynamicData, id=row_id)
+            
+            # Verify ownership (now that user field exists)
+            if not request.user.is_authenticated:
+                return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+                
+            if row.source_file.user != request.user:
+                return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+            
+            row.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+

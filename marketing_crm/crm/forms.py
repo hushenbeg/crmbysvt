@@ -57,3 +57,14 @@ class CustomerDataForm(forms.ModelForm):
         # fields = '__all__'  # or list specific fields like ['name', 'email', ...]
 
 
+from django import forms
+from .models import ImportedFile
+class ExcelUploadForm(forms.ModelForm):
+    file = forms.FileField(label='Select Excel File', required=True)
+    
+    class Meta:
+        model = ImportedFile
+        fields = ['file_name', 'file_type', 'notes', 'file']  # Add 'file' here
+
+
+

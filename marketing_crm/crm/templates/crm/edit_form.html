@@ -1,0 +1,6 @@
+<form id="editForm" method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        {{ form.as_p }}
+    </div>
+</form>

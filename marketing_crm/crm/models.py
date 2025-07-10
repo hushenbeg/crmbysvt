@@ -108,3 +108,26 @@ class VisitorCounter(models.Model):
 
 
 
+from django.db import models
+from django.contrib.postgres.fields import JSONField  # For PostgreSQL
+# For SQLite, use:
+from django.db.models import JSONField
+from django.conf import settings
+class ImportedFile(models.Model):
+    # user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    file_name = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    original_columns = JSONField()  # Stores the column names from the Excel
+    file_type = models.CharField(max_length=100)
+    notes = models.TextField(blank=True)
+    @property
+    def record_count(self):
+        return self.dynamicdata.count()
+
+class DynamicData(models.Model):
+    # source_file = models.ForeignKey(ImportedFile, on_delete=models.CASCADE)
+    source_file = models.ForeignKey(ImportedFile, on_delete=models.CASCADE, related_name='dynamicdata')
+    row_data = JSONField()  # Stores all data from the Excel row
+    created_at = models.DateTimeField(auto_now_add=True)
